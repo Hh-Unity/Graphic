@@ -7,3 +7,11 @@ E:\GraphicRender\GraphicTest\GraphicTest\obj\Debug\GraphicTest.csproj.GenerateRe
 E:\GraphicRender\GraphicTest\GraphicTest\obj\Debug\GraphicTest.csproj.CoreCompileInputs.cache
 E:\GraphicRender\GraphicTest\GraphicTest\obj\Debug\GraphicTest.exe
 E:\GraphicRender\GraphicTest\GraphicTest\obj\Debug\GraphicTest.pdb
+E:\github\Graphic\GraphicTest\GraphicTest\obj\Debug\GraphicTest.Properties.Resources.resources
+E:\github\Graphic\GraphicTest\GraphicTest\obj\Debug\GraphicTest.csproj.GenerateResource.cache
+E:\github\Graphic\GraphicTest\GraphicTest\obj\Debug\GraphicTest.csproj.CoreCompileInputs.cache
+E:\github\Graphic\GraphicTest\GraphicTest\bin\Debug\GraphicTest.exe.config
+E:\github\Graphic\GraphicTest\GraphicTest\bin\Debug\GraphicTest.exe
+E:\github\Graphic\GraphicTest\GraphicTest\bin\Debug\GraphicTest.pdb
+E:\github\Graphic\GraphicTest\GraphicTest\obj\Debug\GraphicTest.exe
+E:\github\Graphic\GraphicTest\GraphicTest\obj\Debug\GraphicTest.pdb

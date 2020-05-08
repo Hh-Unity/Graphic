@@ -15,7 +15,6 @@ namespace GraphicTest
         public float y;
         public float z;
         public float w;
-	 public float eee;
         public Vector4 ZeroVector4
         {
             get { return zeroVector4; }

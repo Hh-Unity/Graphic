@@ -270,10 +270,10 @@ namespace GraphicTest.TransformData
             float sin = Mathf.Sin(rad);
             float cos = (float)Math.Cos(rad);
             Matrix4x4 mat = identityMatrix;
-            mat[0,0] = cos;
-            mat[0,2] = sin;
-            mat[2,0] = -sin;
-            mat[2,2] = cos;
+            mat[0, 0] = cos;
+            mat[0, 2] = sin;
+            mat[2, 0] = -sin;
+            mat[2, 2] = cos;
             return mat;
         }
         /// <summary>
@@ -307,6 +307,54 @@ namespace GraphicTest.TransformData
             mat[1, 0] = sin;
             mat[1, 1] = cos;
             return mat;
+        }
+
+        public static Matrix4x4 operator *(Matrix4x4 m1, Matrix4x4 m2)
+        {
+            Matrix4x4 matrix4X = identityMatrix;
+            matrix4X.m00 = (float)(m1.m00 * m2.m00 + m1.m01 * m2.m10 + m1.m02 * m2.m20 + m1.m03 * m2.m30);
+            matrix4X.m01 = (float)(m1.m00 * m2.m01 + m1.m01 * m2.m11 + m1.m02 * m2.m21 + m1.m03 * m2.m31);
+            matrix4X.m02 = (float)(m1.m00 * m2.m02 + m1.m01 * m2.m12 + m1.m02 * m2.m22 + m1.m03 * m2.m32);
+            matrix4X.m03 = (float)(m1.m00 * m2.m03 + m1.m01 * m2.m13 + m1.m02 * m2.m23 + m1.m03 * m2.m33);
+            matrix4X.m10 = (float)(m1.m10 * m2.m00 + m1.m11 * m2.m10 + m1.m12 * m2.m20 + m1.m13 * m2.m30);
+            matrix4X.m11 = (float)(m1.m10 * m2.m01 + m1.m11 * m2.m11 + m1.m12 * m2.m21 + m1.m13 * m2.m31);
+            matrix4X.m12 = (float)(m1.m10 * m2.m02 + m1.m11 * m2.m12 + m1.m12 * m2.m22 + m1.m13 * m2.m32);
+            matrix4X.m13 = (float)(m1.m10 * m2.m03 + m1.m11 * m2.m13 + m1.m12 * m2.m23 + m1.m13 * m2.m33);
+            matrix4X.m20 = (float)(m1.m20 * m2.m00 + m1.m21 * m2.m10 + m1.m22 * m2.m20 + m1.m23 * m2.m30);
+            matrix4X.m21 = (float)(m1.m20 * m2.m01 + m1.m21 * m2.m11 + m1.m22 * m2.m21 + m1.m23 * m2.m31);
+            matrix4X.m22 = (float)(m1.m20 * m2.m02 + m1.m21 * m2.m12 + m1.m22 * m2.m22 + m1.m23 * m2.m32);
+            matrix4X.m23 = (float)(m1.m20 * m2.m03 + m1.m21 * m2.m13 + m1.m22 * m2.m23 + m1.m23 * m2.m33);
+            matrix4X.m30 = (float)(m1.m30 * m2.m00 + m1.m31 * m2.m10 + m1.m32 * m2.m20 + m1.m33 * m2.m30);
+            matrix4X.m31 = (float)(m1.m30 * m2.m01 + m1.m31 * m2.m11 + m1.m32 * m2.m21 + m1.m33 * m2.m31);
+            matrix4X.m32 = (float)(m1.m30 * m2.m02 + m1.m31 * m2.m12 + m1.m32 * m2.m22 + m1.m33 * m2.m32);
+            matrix4X.m33 = (float)(m1.m30 * m2.m03 + m1.m31 * m2.m13 + m1.m32 * m2.m23 + m1.m33 * m2.m33);
+            return matrix4X;
+        }
+
+
+        public static Vector4 operator *(Matrix4x4 m1, Vector4 vector)
+        {
+            Vector4 vector4;
+            vector4.x = (float)(m1.m00 * (double)vector.x + m1.m01 * (double)vector.y +
+                                 m1.m02 * (double)vector.z + m1.m03 * (double)vector.w);
+            vector4.y = (float)(m1.m10 * (double)vector.x + m1.m11 * (double)vector.y +
+                                 m1.m12 * (double)vector.z + m1.m13 * (double)vector.w);
+            vector4.z = (float)(m1.m20 * (double)vector.x + m1.m21 * (double)vector.y +
+                                 m1.m22 * (double)vector.z + m1.m23 * (double)vector.w);
+            vector4.w = (float)(m1.m30 * (double)vector.x + m1.m31 * (double)vector.y +
+                                 m1.m32 * (double)vector.z + m1.m33 * (double)vector.w);
+            return vector4;
+        }
+
+        public static bool operator ==(Matrix4x4 m1, Matrix4x4 m2)
+        {
+            return m1.GetColumn(0) == m2.GetColumn(0) && m1.GetColumn(1) == m2.GetColumn(1) &&
+                   m1.GetColumn(2) == m2.GetColumn(2) && m1.GetColumn(3) == m2.GetColumn(3);
+        }
+
+        public static bool operator !=(Matrix4x4 m1, Matrix4x4 m2)
+        {
+            return !(m1 == m2);
         }
 
     }
