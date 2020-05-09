@@ -18,10 +18,5 @@ namespace GraphicTest.TransformData
         {
             return (float)Math.Cos((double)f);
         }
-
-        public static float cc()
-        {
-            return 0.0f;
-        }
     }
 }
