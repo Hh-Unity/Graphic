@@ -53,6 +53,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RenderData\Camera.cs" />
     <Compile Include="TransformData\Mathf.cs" />
     <Compile Include="TransformData\Matrix4x4.cs" />
     <Compile Include="TransformData\Vector2.cs" />

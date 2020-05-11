@@ -255,38 +255,35 @@ namespace GraphicTest.TransformData
             }
         }
 
-        public static Matrix4x4 TRS(Vector3 pos , Vector3 eulerAngles , Vector3 scale)
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = m00.GetHashCode();
+                hashCode = hashCode ^ m10.GetHashCode();
+                hashCode = hashCode ^ m20.GetHashCode();
+                hashCode = hashCode ^ m30.GetHashCode();
+                hashCode = hashCode ^ m01.GetHashCode();
+                hashCode = hashCode ^ m11.GetHashCode();
+                hashCode = hashCode ^ m21.GetHashCode();
+                hashCode = hashCode ^ m31.GetHashCode();
+                hashCode = hashCode ^ m02.GetHashCode();
+                hashCode = hashCode ^ m12.GetHashCode();
+                hashCode = hashCode ^ m22.GetHashCode();
+                hashCode = hashCode ^ m32.GetHashCode();
+                hashCode = hashCode ^ m03.GetHashCode();
+                hashCode = hashCode ^ m13.GetHashCode();
+                hashCode = hashCode ^ m23.GetHashCode();
+                hashCode = hashCode ^ m33.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        public static Matrix4x4 TRS(Vector3 pos, Vector3 eulerAngles, Vector3 scale)
         {
             Matrix4x4 mat = Translate(pos);
             mat = mat * Rotate(eulerAngles) * Scale(scale);
             return mat;
-        }
-
-        public static Matrix4x4 Rotate(Vector3 euler)
-        {
-            return RotateY(euler.y) * RotateX(euler.x) * RotateZ(euler.z);
-        }
-
-        public static Matrix4x4 Translate(Vector3 vector)
-        {
-            Matrix4x4 matrix4X = identityMatrix;
-            matrix4X.m00 = 1.0f;
-            matrix4X.m01 = 0.0f;
-            matrix4X.m02 = 0.0f;
-            matrix4X.m03 = vector.x;
-            matrix4X.m10 = 0.0f;
-            matrix4X.m11 = 1.0f;
-            matrix4X.m12 = 0.0f;
-            matrix4X.m13 = vector.y;
-            matrix4X.m20 = 0.0f;
-            matrix4X.m21 = 0.0f;
-            matrix4X.m22 = 1.0f;
-            matrix4X.m23 = vector.z;
-            matrix4X.m30 = 0.0f;
-            matrix4X.m31 = 0.0f;
-            matrix4X.m32 = 0.0f;
-            matrix4X.m33 = 1.0f;
-            return matrix4X;
         }
 
         public static Matrix4x4 Scale(Vector3 scale)
@@ -296,6 +293,39 @@ namespace GraphicTest.TransformData
             mat[1, 1] = scale.y;
             mat[2, 2] = scale.z;
             return mat;
+        }
+
+      
+
+        public static Matrix4x4 Translate(Vector3 vector)
+        {
+            Matrix4x4 matrix4x4 = identityMatrix;
+            matrix4x4.m00 = 1f;
+            matrix4x4.m01 = 0.0f;
+            matrix4x4.m02 = 0.0f;
+            matrix4x4.m03 = vector.x;
+            matrix4x4.m10 = 0.0f;
+            matrix4x4.m11 = 1f;
+            matrix4x4.m12 = 0.0f;
+            matrix4x4.m13 = vector.y;
+            matrix4x4.m20 = 0.0f;
+            matrix4x4.m21 = 0.0f;
+            matrix4x4.m22 = 1f;
+            matrix4x4.m23 = vector.z;
+            matrix4x4.m30 = 0.0f;
+            matrix4x4.m31 = 0.0f;
+            matrix4x4.m32 = 0.0f;
+            matrix4x4.m33 = 1f;
+            return matrix4x4;
+        }
+        /// <summary>
+        /// 旋转矩阵
+        /// </summary>
+        /// <param name="euler"></param>
+        /// <returns></returns>
+        public static Matrix4x4 Rotate(Vector3 euler)
+        {
+            return RotateY(euler.y) * RotateX(euler.x) * RotateZ(euler.z);
         }
 
         /// <summary>
@@ -424,6 +454,170 @@ namespace GraphicTest.TransformData
         public static bool operator !=(Matrix4x4 m1, Matrix4x4 m2)
         {
             return !(m1 == m2);
+        }
+
+        /// <summary>
+        /// 求逆矩阵
+        /// </summary>
+        public Matrix4x4 Inverse()
+        {
+            Set(Inverse(ToArray()));
+            return this;
+        }
+
+        private float[,] Inverse(float[,] arr)
+        {
+            float det = GetDeterminant(arr);
+            if (det.Equals(0))
+            {
+                Console.WriteLine("行列式为0，没有逆矩阵");
+            }
+            else
+            {
+                for (int i = 0; i < arr.GetLength(0); i++)
+                {
+                    for (int j = i + 1; j < arr.GetLength(1); j++)
+                    {
+                        arr[j, i] /= det;
+                    }
+                }
+            }
+
+            return arr;
+        }
+
+        private float[,] ToArray()
+        {
+            float[,] result = new float[4, 4];
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    result[i, j] = this[i, j];
+                }
+            }
+
+            return result;
+        }
+
+        private float GetDeterminant()
+        {
+            float[,] arr = GetArr();
+            return GetDeterminant(arr);
+        }
+
+        /// <summary>
+        /// 转置矩阵
+        /// </summary>
+        public Matrix4x4 TransposeMatrix()
+        {
+            Set(TransposeMatrix(ToArray()));
+            return this;
+        }
+
+        /// <summary>
+        /// 转置矩阵
+        /// </summary>
+        /// <param name="arr"></param>
+        /// <returns></returns>
+        private float[,] TransposeMatrix(float[,] arr)
+        {
+            for (int i = 0; i < arr.GetLength(0); i++)
+            {
+                for (int j = i + 1; j < arr.GetLength(1); j++)
+                {
+                    float temp = arr[i, j];
+                    arr[i, j] = arr[j, i];
+                    arr[j, i] = temp;
+                }
+            }
+
+            return arr;
+        }
+
+        #region 求行列式
+
+        /// <summary>
+        /// 求矩阵的行列式
+        /// </summary>
+        private static float GetDeterminant(float[,] arr)
+        {
+            if (arr.GetLength(0) <= 2) return GetSubArrDeterminant(arr, 0, 0);
+            float num = 0;
+            for (int i = 0; i < arr.GetLength(1); i++)
+            {
+                num += GetSubArrDeterminant(arr, 0, i) * (float)Math.Pow(-1, i);
+            }
+
+            return num;
+        }
+
+        /// <summary>
+        /// 得到余子式的行列式
+        /// </summary>
+        private static float GetSubArrDeterminant(float[,] arr, int x, int y)
+        {
+            if (arr.GetLength(0) <= 2)
+            {
+                return arr[0, 0] * arr[1, 1] - arr[0, 1] * arr[1, 0];
+            }
+
+            return arr[x, y] * GetDeterminant(GetSubArr(arr, x, y));
+        }
+        /// <summary>
+        /// 得到余子式
+        /// </summary>
+        private static float[,] GetSubArr(float[,] arr, int x, int y)
+        {
+            if (arr.GetLength(0) <= 1) return arr;
+            float[,] temp = new float[arr.GetLength(0) - 1, arr.GetLength(1) - 1];
+            for (int i = 0; i < arr.GetLength(0); i++)
+            {
+                if (i == x) continue;
+                for (int j = 0; j < arr.GetLength(1); j++)
+                {
+                    if (j == y) continue;
+                    temp[i < x ? i : i - 1, j < y ? j : j - 1] = arr[i, j];
+                }
+            }
+
+            return temp;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// 求矩阵的伴随矩阵
+        /// 求每个元素的代数余子式，组成一个矩阵
+        /// </summary>
+        private static float[,] GetAdjointMatrix(float[,] arr)
+        {
+            if (arr.GetLength(0) <= 2) return arr;
+            float[,] result = new float[arr.GetLength(0), arr.GetLength(1)];
+            for (int i = 0; i < arr.GetLength(0); i++)
+            {
+                for (int j = 0; j < arr.GetLength(1); j++)
+                {
+                    float[,] temp = GetSubArr(arr, i, j);
+                    result[i, j] = (float)Math.Pow(-1, i + j) * GetDeterminant(temp);
+                }
+            }
+
+            return result;
+        }
+
+        private float[,] GetArr()
+        {
+            float[,] arr = new float[4, 4];
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    arr[i, j] = this[i, j];
+                }
+            }
+
+            return arr;
         }
 
     }
