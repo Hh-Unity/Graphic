@@ -279,6 +279,13 @@ namespace GraphicTest.TransformData
             }
         }
 
+        public static Matrix4x4 TRS(Vector3 pos, Vector3 eulerAngles, Vector3 scale)
+        {
+            Matrix4x4 mat = Translate(pos);
+            mat = mat * Rotate(eulerAngles) * Scale(scale);
+            return mat;
+        }
+
         public static Matrix4x4 Scale(Vector3 scale)
         {
             Matrix4x4 mat = identityMatrix;
@@ -288,12 +295,7 @@ namespace GraphicTest.TransformData
             return mat;
         }
 
-        public static Matrix4x4 TRS(Vector3 pos, Vector3 eulerAngles, Vector3 scale)
-        {
-            Matrix4x4 mat = Translate(pos);
-            mat = mat * Rotate(eulerAngles) * Scale(scale);
-            return mat;
-        }
+      
 
         public static Matrix4x4 Translate(Vector3 vector)
         {
@@ -410,6 +412,37 @@ namespace GraphicTest.TransformData
             vector4.w = (float)(m1.m30 * (double)vector.x + m1.m31 * (double)vector.y +
                                  m1.m32 * (double)vector.z + m1.m33 * (double)vector.w);
             return vector4;
+        }
+        /// <summary>
+        /// 绕任意轴旋转
+        /// </summary>
+        /// <param name="axis">轴向量</param>
+        /// <param name="angle">弧度</param>
+        /// <returns></returns>
+        public static Matrix4x4 ArbitraryAxis(Vector4 axis, float angle)
+        {
+            Matrix4x4 matrix4X = new Matrix4x4();
+            //第一列：
+            matrix4X[0, 0] = axis.x * axis.x * (1 - Mathf.Cos(angle)) + Mathf.Cos(angle);
+            matrix4X[1, 0] = axis.x * axis.y * (1 - Mathf.Cos(angle)) - axis.z * Mathf.Sin(angle);
+            matrix4X[2, 0] = axis.x * axis.z * (1 - Mathf.Cos(angle)) + axis.y * Mathf.Sin(angle);
+            matrix4X[3, 0] = 0;
+            //第二列：
+            matrix4X[0, 1] = axis.x * axis.y * (1 - Mathf.Cos(angle)) + axis.z * Mathf.Sin(angle);
+            matrix4X[1, 1] = axis.y * axis.y * (1 - Mathf.Cos(angle)) + Mathf.Cos(angle);
+            matrix4X[2, 1] = axis.y * axis.z * (1 - Mathf.Cos(angle)) - axis.x * Mathf.Sin(angle);
+            matrix4X[3, 1] = 0;
+            //第三列：
+            matrix4X[0, 2] = axis.x * axis.z * (1 - Mathf.Cos(angle)) - axis.y * Mathf.Sin(angle);
+            matrix4X[1, 2] = axis.y * axis.z * (1 - Mathf.Cos(angle)) + axis.x * Mathf.Sin(angle);
+            matrix4X[2, 2] = axis.x * axis.x * (1 - Mathf.Cos(angle)) + Mathf.Cos(angle);
+            matrix4X[3, 2] = 0;
+            //第四列：
+            matrix4X[0, 3] = 0;
+            matrix4X[1, 3] = 0;
+            matrix4X[2, 3] = 0;
+            matrix4X[3, 3] = 1;
+            return matrix4X;
         }
 
         public static bool operator ==(Matrix4x4 m1, Matrix4x4 m2)
