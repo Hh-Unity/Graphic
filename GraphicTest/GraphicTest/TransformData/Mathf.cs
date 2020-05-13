@@ -25,5 +25,10 @@ namespace GraphicTest.TransformData
                 return max;
             return value < min ? min : value;
         }
+
+        public static float Max(float a, float b)
+        {
+            return a > b ? a : b;
+        }
     }
 }
