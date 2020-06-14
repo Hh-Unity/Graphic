@@ -105,5 +105,17 @@ namespace GraphicTest.RenderData
             return proj;
         }
 
+        public static bool BackFaceCulling(Vertex p1, Vertex p2, Vertex p3)
+        {
+            //其中p1 P2 p3必定严格按照逆时针或者顺时针的顺序存储
+            //而且p1 p2 p3的point必须是视图空间的坐标
+            Vector3 v1 = p2.point - p1.point;
+            Vector3 v2 = p3.point - p2.point;
+            Vector3 normal = Vector3.Cross(v1, v2); //计算法线
+            //由于在视空间中，所以相机点就是（0,0,0）
+            Vector3 viewDir = p1.point - Vector4.ZeroVector4;
+            return Vector3.Dot(normal, viewDir) > 0;
+        }
+
     }
 }

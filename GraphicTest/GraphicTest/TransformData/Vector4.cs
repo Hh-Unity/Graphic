@@ -15,12 +15,12 @@ namespace GraphicTest
         public float y;
         public float z;
         public float w;
-        public Vector4 ZeroVector4
+        public static Vector4 ZeroVector4
         {
             get { return zeroVector4; }
         }
 
-        public Vector4 OneVector4
+        public static Vector4 OneVector4
         {
             get { return oneVector4; }
         }
