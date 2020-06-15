@@ -60,6 +60,8 @@
     <Compile Include="RenderData\Mesh.cs" />
     <Compile Include="RenderData\Triangle.cs" />
     <Compile Include="RenderData\Vertex.cs" />
+    <Compile Include="Test\CubeTestData.cs" />
+    <Compile Include="Test\QuadTestData.cs" />
     <Compile Include="TransformData\Mathf.cs" />
     <Compile Include="TransformData\Matrix4x4.cs" />
     <Compile Include="TransformData\Vector2.cs" />
