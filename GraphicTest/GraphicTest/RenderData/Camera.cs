@@ -58,7 +58,7 @@ namespace GraphicTest.RenderData
             forward.Normalize();
             Vector4 side = Vector4.Corss(nUp, forward);
             side.Normalize();
-            Vector4 up = Vector4.Corss(side,forward);
+            Vector4 up = Vector4.Corss(forward, side);
             up.Normalize();
 
             Matrix4x4 m1 = new Matrix4x4
