@@ -31,6 +31,10 @@ namespace GraphicTest
         private System.Drawing.Color[,] textureArray; //纹理颜色值
         Graphics g;
         private Mesh mesh;
+        private RenderMode rendMode; //渲染模式
+        private bool isOpenLight; //光照模式
+        private bool isOpenTexture; //纹理采样
+        private bool isCull = true;
         public Form1()
         {
             InitializeComponent();
@@ -45,6 +49,9 @@ namespace GraphicTest
             g = CreateGraphics();
             frameBuff = new Bitmap(width, height);
             frameG = Graphics.FromImage(frameBuff);
+            rendMode = RenderMode.Textured;
+            isOpenLight = true;
+            isOpenTexture = true;
             ambientColor = new RenderData.Color(0.1f, 0.1f, 0.1f);
             mesh = new Mesh(CubeTestData.PointList, CubeTestData.Indexs, CubeTestData.UVs, CubeTestData.VertColors,
                CubeTestData.Normals, QuadTestData.Mat);
@@ -53,6 +60,7 @@ namespace GraphicTest
             light = new Light(new Vector3(0, 10, 0), new RenderData.Color(1, 1, 1));
             thread = new Thread(new ThreadStart(Tick));
             thread.Start();
+            pictureBox1.Hide();
         }
 
         private void Tick()
@@ -62,7 +70,7 @@ namespace GraphicTest
                 lock (frameBuff)
                 {
                     ClearBuff();
-                    Matrix4x4 worldMatrix = Matrix4x4.Translate(new Vector3(0, 3, 12)) * Matrix4x4.RotateY(0) *
+                    Matrix4x4 worldMatrix = Matrix4x4.Translate(new Vector3(-2, 3, 12)) * Matrix4x4.RotateY(0) *
                                            Matrix4x4.RotateX(-0.2f) * Matrix4x4.RotateZ(0);
                     Matrix4x4 viewMatrix = Camera.BuildViewMatrix(camera.eyePosition, camera.up, camera.lookAtPos);
                     Matrix4x4 projectionMatrix =
@@ -73,6 +81,21 @@ namespace GraphicTest
                         g.DrawImage(frameBuff, 0, 0);
                    
                 }
+            }
+        }
+
+        private void RenderBtn_Click(object sender, EventArgs e)
+        {
+            switch (rendMode)
+            {
+                case RenderMode.Wireframe:
+                    rendMode = RenderMode.Textured;
+                    renderBtn.Text = "贴图";
+                    break;
+                case RenderMode.Textured:
+                    rendMode = RenderMode.Wireframe;
+                    renderBtn.Text = "线框";
+                    break;
             }
         }
 
@@ -107,6 +130,7 @@ namespace GraphicTest
             SetModelToWorld(m, ref v2);
             SetModelToWorld(m, ref v3);
 
+
             Light.BaseLight(m, light, mesh, camera.eyePosition, ambientColor, ref v1);
             Light.BaseLight(m, light, mesh, camera.eyePosition, ambientColor, ref v2);
             Light.BaseLight(m, light, mesh, camera.eyePosition, ambientColor, ref v3);
@@ -133,7 +157,36 @@ namespace GraphicTest
             TransformToScreen(ref v2);
             TransformToScreen(ref v3);
 
-            TriangleRasterization(v1,v2,v3);
+            if (isCull)
+            {
+                List<Triangle> outValue;
+                CubeClip(new Triangle(v1, v2, v3), out outValue);
+                for (int i = 0; i < outValue.Count; i++)
+                {
+                    Rasterization(outValue[i][0], outValue[i][1], outValue[i][2]);
+                }
+                //Rasterization(p1, p2, p3);
+            }
+            else
+            {
+                Rasterization(v1, v2, v3);
+            }
+
+            //TriangleRasterization(v1,v2,v3);
+        }
+
+        void Rasterization(Vertex p1, Vertex p2, Vertex p3)
+        {
+            if (rendMode == RenderMode.Wireframe)
+            {
+                BresenhamDrawLine(p1, p2);
+                BresenhamDrawLine(p2, p3);
+                BresenhamDrawLine(p3, p1);
+            }
+            else
+            {
+                TriangleRasterization(p1, p2, p3);
+            }
         }
 
         private void TriangleRasterization(Vertex v1,Vertex v2,Vertex v3)
@@ -206,12 +259,14 @@ namespace GraphicTest
             int startY = (int)Math.Ceiling(v1.point.y);
             int endX = (int)Math.Ceiling(v2.point.x);
             int endY = (int)Math.Ceiling(v2.point.y);
+            int curX = startX, curY = startY;
             float disX = endX - startX;
             float disY = endY - startY;
             int stepX = Math.Sign(disX);
             int stepY = Math.Sign(disY);
             float e = 0.0f;
             float k = 0;
+            float t = 0;
             if (Math.Abs(disX) > Math.Abs(disY))
             {
                 if (disX == 0)
@@ -220,22 +275,76 @@ namespace GraphicTest
                 }
 
                 k = Math.Abs(disY / disX);
+                disX = 1 / disX;
                 while (true)
                 {
+                    
+                    //if(startX >= 0 && startY >= 0 && startX < width && startY < height)
+                    //    frameBuff.SetPixel(startX, startY, finalColor.TransToSystemColor());
+                    t = (startX - startY) * disY;
+
+                    MixColor(v1,v2,t,curX,curY);
                     e += k;
-                    if(startX >= 0 && startY >= 0 && startX < width && startY < height)
-                        frameBuff.SetPixel(startX, startY, System.Drawing.Color.White);
                     if (e >= 1)
                     {
                         e--;
                     }
 
                     if (e > 0.5)
-                        startY += stepY;
-                    if (startX == endX) break;
-                    startX += stepX;
+                        curY += stepY;
+                    if (curX == endX) break;
+                    curX += stepX;
                 }
             }
+        }
+
+        private void MixColor(Vertex v1, Vertex v2, float t, int curX, int curY)
+        {
+            RenderData.Color finalColor = new RenderData.Color(1, 1, 1);
+            if (rendMode == RenderMode.Textured)
+            {
+                if (v1.depth == 0)
+                    Console.WriteLine();
+                float w = Mathf.Lerp(v1.depth, v2.depth, t);
+                w = 1 / w;
+                if (isOpenLight)
+                {
+                    Mathf.Lerp(ref finalColor, v1.lightingColor, v2.lightingColor, t);
+                    finalColor *= w;
+                }
+                if (!isOpenTexture)
+                {
+                    //颜色和光照混合
+                    RenderData.Color temp = new RenderData.Color();
+                    Mathf.Lerp(ref temp, v1.pointColor, v2.pointColor, t);
+                    finalColor = temp * w * finalColor;
+                }
+                else
+                {
+                    //uv坐标
+                    int u = (int)(Mathf.Lerp(v1.u, v2.u, t) * w * (imgWidth - 1));
+                    int v = (int)(Mathf.Lerp(v1.v, v2.v, t) * w * (imgHeight - 1));
+
+                    //纹理颜色
+                    finalColor = new RenderData.Color(Tex(u, v)) * finalColor;
+                    if (!(finalColor.R >= 0 && finalColor.R <= 255))
+                        Console.WriteLine();
+                }
+            }
+            if (curX >= 0 && curY >= 0 && curX < width && curY < height)
+            {
+                frameBuff.SetPixel(curX, curY, finalColor.TransToSystemColor());
+            }
+        }
+
+        private System.Drawing.Color Tex(int i, int j)
+        {
+            if (i < 0 || i > imgWidth - 1 || j < 0 || j > imgHeight - 1)
+            {
+                return System.Drawing.Color.Black;
+            }
+
+            return textureArray[i, imgHeight - 1 - j];
         }
         /// <summary>
         /// v1上顶点
@@ -271,6 +380,10 @@ namespace GraphicTest
                 {
                     point = new Vector4(curxR, startY, 0, 0)
                 };
+                float t = (y1 - startY) / (float)(y1 - y3);
+                Mathf.Lerp(ref vl, v1, v3, t);
+                Mathf.Lerp(ref vR, v1, v2, t);
+
                 BresenhamDrawLine(vl, vR);
             }
         }
@@ -309,7 +422,9 @@ namespace GraphicTest
                 {
                     point = new Vector4(curR, starY, 0, 0)
                 };
-
+                float t = (starY - y1) * 1.0f / (y2 - y1);
+                Mathf.Lerp(ref vl, v1, v2, t);
+                Mathf.Lerp(ref vR, v1, v3, t);
                 BresenhamDrawLine(vl, vR);
             }
         }
@@ -374,6 +489,233 @@ namespace GraphicTest
                 return true;
             }
             return false;
+        }
+
+        List<Vector3> normalList = new List<Vector3>()
+        {
+               new Vector3(0,0,1),
+               new Vector3(0,0,-1),
+               new Vector3(1,0,0),
+               new Vector3(-1,0,0),
+               new Vector3(0,-1,0),
+               new Vector3(0,1,0),
+        };
+
+        int[] disArr = new int[] { -1, -1, 1, -798, -2, 598 };
+
+        List<Func<float, int, bool>> funcs = new List<Func<float, int, bool>>()
+        {
+            (view,dis) => view>dis,
+            (view,dis) => view>dis,
+            (view,dis) => view>dis,
+            (view,dis) => view>dis,
+            (view,dis) => view<dis,
+            (view,dis) => view<dis,
+
+        };
+
+        private Queue<Triangle> clipQueue = new Queue<Triangle>();
+
+        private void CubeClip(Triangle triangle, out List<Triangle> outValue)
+        {
+            outValue = new List<Triangle>();
+            clipQueue.Enqueue(triangle);
+            bool isClip = false;
+            Triangle temp;
+            while (clipQueue.Count > 0)
+            {
+                temp = clipQueue.Dequeue();
+                for (int i = temp.startIndex; i < normalList.Count; i++)
+                {
+                    if (!isClip)
+                    {
+                        isClip = CubeClip(temp[0], temp[1], temp[2], normalList[i],disArr[i], funcs[i],i);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                if (!isClip)
+                {
+                    outValue.Add(temp);
+                }
+                isClip = false;
+            }
+
+        }
+
+        bool CubeClip(Vertex v1, Vertex v2, Vertex v3, Vector3 v4 , int nDis, Func<float, int, bool> nFunc, int startIndex)
+        {
+            Vector3 normal = v4;
+            int dis = nDis;
+            Func<float, int, bool> checkIsIn = nFunc;
+            //点在法线上的投影
+            float projectV1 = Vector3.Dot(normal, v1.point);
+            float projectV2 = Vector3.Dot(normal, v2.point);
+            float projectV3 = Vector3.Dot(normal, v3.point);
+            //点与点之间的距离
+            float dv1v2 = Math.Abs(projectV1 - projectV2);
+            float dv1v3 = Math.Abs(projectV1 - projectV3);
+            float dv2v3 = Math.Abs(projectV2 - projectV3);
+            //颠倒平面的距离
+            float pv1 = Math.Abs(projectV1 - dis);
+            float pv2 = Math.Abs(projectV2 - dis);
+            float pv3 = Math.Abs(projectV3 - dis);
+            //插值
+            float t = 0;
+
+            if (checkIsIn(projectV1, dis) && checkIsIn(projectV2, dis) && checkIsIn(projectV3, dis))
+            {
+                //都在里面 
+                return false;
+            }
+            if (!checkIsIn(projectV1, dis) && checkIsIn(projectV2, dis) && checkIsIn(projectV3, dis))//v1在外面
+            {
+                Vertex temp12 = new Vertex();
+                t = pv2 / dv1v2;
+                temp12.point.x = Mathf.Lerp(v2.point.x, v1.point.x, t);
+                temp12.point.y = Mathf.Lerp(v2.point.y, v1.point.y, t);
+                temp12.point.z = dis;
+                temp12.point.w = 1;
+                Mathf.Lerp(ref temp12, v2, v1, t);
+
+                Vertex temp13 = new Vertex();
+                t = pv3 / dv1v3;
+                temp13.point.x = Mathf.Lerp(v3.point.x, v1.point.x, t);
+                temp13.point.y = Mathf.Lerp(v3.point.y, v1.point.y, t);
+                temp13.point.z = dis;
+                temp13.point.w = 1;
+                Mathf.Lerp(ref temp13, v3, v1, t);
+
+                clipQueue.Enqueue(new Triangle(temp13, temp12, v2, startIndex + 1));
+                clipQueue.Enqueue(new Triangle(temp13, v2, v3, startIndex + 1));
+                return true;
+            }
+            if (checkIsIn(projectV1, dis) && !checkIsIn(projectV2, dis) && checkIsIn(projectV3, dis))//v2在外面
+            {
+                Vertex temp12 = new Vertex();
+                t = pv1 / dv1v2;
+                temp12.point.x = Mathf.Lerp(v1.point.x, v2.point.x, t);
+                temp12.point.y = Mathf.Lerp(v1.point.y, v2.point.y, t);
+                temp12.point.z = Mathf.Lerp(v1.point.z, v2.point.z, t);
+                Mathf.Lerp(ref temp12, v1, v2, t);
+
+
+                Vertex temp23 = new Vertex();
+                t = pv3 / dv2v3;
+                temp23.point.x = Mathf.Lerp(v3.point.x, v2.point.x, t);
+                temp23.point.y = Mathf.Lerp(v3.point.y, v2.point.y, t);
+                temp23.point.z = Mathf.Lerp(v3.point.z, v2.point.z, t);
+                Mathf.Lerp(ref temp23, v3, v2, t);
+
+                clipQueue.Enqueue(new Triangle(temp12, temp23, v3, startIndex + 1));
+                clipQueue.Enqueue(new Triangle(temp12, v3, v1, startIndex + 1));
+                return true;
+            }
+            if (checkIsIn(projectV1, dis) && checkIsIn(projectV2, dis) && !checkIsIn(projectV3, dis))//v3在外面
+            {
+                Vertex temp23 = new Vertex();
+                t = pv2 / dv2v3;
+                temp23.point.x = Mathf.Lerp(v2.point.x, v3.point.x, t);
+                temp23.point.y = Mathf.Lerp(v2.point.y, v3.point.y, t);
+                temp23.point.z = Mathf.Lerp(v2.point.z, v3.point.z, t);
+                Mathf.Lerp(ref temp23, v2, v3, t);
+
+                Vertex temp13 = new Vertex();
+                t = pv1 / dv1v3;
+                temp13.point.x = Mathf.Lerp(v1.point.x, v3.point.x, t);
+                temp13.point.y = Mathf.Lerp(v1.point.y, v3.point.y, t);
+                temp13.point.z = Mathf.Lerp(v1.point.z, v3.point.z, t);
+                Mathf.Lerp(ref temp13, v1, v3, t);
+
+                clipQueue.Enqueue(new Triangle(temp23, temp13, v1, startIndex + 1));
+                clipQueue.Enqueue(new Triangle(temp23, v1, v2, startIndex + 1));
+                return true;
+            }
+            if (!checkIsIn(projectV1, dis) && !checkIsIn(projectV2, dis) && checkIsIn(projectV3, dis))//v1 v2在外面
+            {
+                Vertex temp13 = new Vertex();
+                t = pv3 / dv1v3;
+                temp13.point.x = Mathf.Lerp(v3.point.x, v1.point.x, t);
+                temp13.point.y = Mathf.Lerp(v3.point.y, v1.point.y, t);
+                temp13.point.z = Mathf.Lerp(v3.point.z, v1.point.z, t);
+                Mathf.Lerp(ref temp13, v3, v1, t);
+
+                Vertex temp23 = new Vertex();
+                t = pv3 / dv2v3;
+                temp23.point.x = Mathf.Lerp(v3.point.x, v2.point.x, t);
+                temp23.point.y = Mathf.Lerp(v3.point.y, v2.point.y, t);
+                temp23.point.z = Mathf.Lerp(v3.point.z, v2.point.z, t);
+                Mathf.Lerp(ref temp23, v3, v2, t);
+
+                clipQueue.Enqueue(new Triangle(temp13, temp23, v3, startIndex + 1));
+                return true;
+            }
+            if (!checkIsIn(projectV1, dis) && checkIsIn(projectV2, dis) && !checkIsIn(projectV3, dis))//v1 v3在外面
+            {
+                Vertex temp23 = new Vertex();
+                t = pv2 / dv2v3;
+                temp23.point.x = Mathf.Lerp(v2.point.x, v3.point.x, t);
+                temp23.point.y = Mathf.Lerp(v2.point.y, v3.point.y, t);
+                temp23.point.z = Mathf.Lerp(v2.point.z, v3.point.z, t);
+                Mathf.Lerp(ref temp23, v2, v3, t);
+
+                Vertex temp12 = new Vertex();
+                t = pv2 / dv1v2;
+                temp12.point.x = Mathf.Lerp(v2.point.x, v1.point.x, t);
+                temp12.point.y = Mathf.Lerp(v2.point.y, v1.point.y, t);
+                temp12.point.z = Mathf.Lerp(v2.point.z, v1.point.z, t);
+                Mathf.Lerp(ref temp12, v2, v1, t);
+
+                clipQueue.Enqueue(new Triangle(temp23, temp12, v2, startIndex + 1));
+                return true;
+            }
+            if (checkIsIn(projectV1, dis) && !checkIsIn(projectV2, dis) && !checkIsIn(projectV3, dis))//v2 v3在外面
+            {
+                Vertex temp12 = new Vertex();
+                t = pv1 / dv1v2;
+                temp12.point.x = Mathf.Lerp(v1.point.x, v2.point.x, t);
+                temp12.point.y = Mathf.Lerp(v1.point.y, v2.point.y, t);
+                temp12.point.z = Mathf.Lerp(v1.point.z, v2.point.z, t);
+                Mathf.Lerp(ref temp12, v1, v2, t);
+
+                Vertex temp13 = new Vertex();
+                t = pv1 / dv1v3;
+                temp13.point.x = Mathf.Lerp(v1.point.x, v3.point.x, t);
+                temp13.point.y = Mathf.Lerp(v1.point.y, v3.point.y, t);
+                temp13.point.z = Mathf.Lerp(v1.point.z, v3.point.z, t);
+                Mathf.Lerp(ref temp13, v1, v3, t);
+
+                clipQueue.Enqueue(new Triangle(temp12, temp13, v1, startIndex + 1));
+                return true;
+            }
+            return false;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textureBtn_Click(object sender, EventArgs e)
+        {
+            isOpenTexture = !isOpenTexture;
+        }
+
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void cullingBtn_Click(object sender, EventArgs e)
+        {
+            //isCull = !isCull;
         }
     }
 }
